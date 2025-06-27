@@ -1,4 +1,4 @@
-This project is a TypeScript/NestJS implementation of the [postgres-full-text-search-example](https://github.com/andfadeev/postgres-full-text-search-example) repository, demonstrating PostgreSQL's powerful full-text search capabilities in a modern Node.js environment.
+This project is a TypeScript/NestJS implementation of the [postgres-full-text-search-example](https://github.com/andfadeev/postgres-full-text-search-example) repository, demonstrating PostgreSQL's powerful full-text search capabilities in a Node.js environment.
 
 ## Features
 
@@ -205,18 +205,11 @@ async searchDynamic(query: string): Promise<any[]> {
   - You need to search across columns not included in the pre-calculated vector
   - You want to use different weights for different search contexts
   - The search vector definition needs to change frequently
-
-## Development
-
-This project is built on Nx, a smart and extensible build framework. For more information on using Nx, see the [Nx Documentation](https://nx.dev).
-
-```sh
-# Serve the application
-npx nx serve api
-
-# Build the application
-npx nx build api
-
-# Run tests
-npx nx test api
-```
+ 
+## Metrics
+- **Total Article count in dataset**: 2692 
+Searching for the "gardening" keyword:
+- **Pre-calculated vectors**: 
+    - **Basic**: 4-6ms
+    - **Highlight**: 4-6ms 
+- **Dynamic vectors**: 700ms
