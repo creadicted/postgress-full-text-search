@@ -37,7 +37,7 @@ export class ArticleEntity {
       B: article.content || '',
     }),
     name: 'search_vector',
-    hidden: true
+    hidden: true,
   })
   searchVector!: WeightedFullTextValue;
 }

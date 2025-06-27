@@ -1,9 +1,9 @@
-import {EntityManager} from '@mikro-orm/core';
-import {Seeder} from '@mikro-orm/seeder';
+import { EntityManager } from '@mikro-orm/core';
+import { Seeder } from '@mikro-orm/seeder';
 import * as fs from 'fs';
 import * as path from 'path';
-import {parse} from 'csv-parse/sync';
-import {ArticleEntity} from './article.entity';
+import { parse } from 'csv-parse/sync';
+import { ArticleEntity } from './article.entity';
 
 /**
  * ArticleSeeder is responsible for populating the database with sample

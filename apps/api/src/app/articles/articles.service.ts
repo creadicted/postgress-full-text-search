@@ -1,7 +1,7 @@
-import {Injectable} from '@nestjs/common';
-import {EntityManager, EntityRepository} from '@mikro-orm/core';
-import {InjectRepository} from '@mikro-orm/nestjs';
-import {ArticleEntity} from './article.entity';
+import { Injectable } from '@nestjs/common';
+import { EntityManager, EntityRepository } from '@mikro-orm/core';
+import { InjectRepository } from '@mikro-orm/nestjs';
+import { ArticleEntity } from './article.entity';
 
 @Injectable()
 export class ArticlesService {
@@ -9,8 +9,7 @@ export class ArticlesService {
     @InjectRepository(ArticleEntity)
     private readonly articleRepository: EntityRepository<ArticleEntity>,
     private readonly em: EntityManager
-  ) {
-  }
+  ) {}
 
   async count() {
     return this.articleRepository.count();
@@ -23,22 +22,21 @@ export class ArticlesService {
   }
 
   async findById(id: number): Promise<ArticleEntity | null> {
-    return this.articleRepository.findOne({id});
+    return this.articleRepository.findOne({ id });
   }
 
   async search(query: string): Promise<ArticleEntity[]> {
     // Using the full-text search functionality with entity manager
     return this.articleRepository.find(
       {
-        searchVector: {$fulltext: query},
+        searchVector: { $fulltext: query },
       },
       {
-        orderBy: {id: 'DESC'},
-        limit: 5
+        orderBy: { id: 'DESC' },
+        limit: 5,
       }
     );
   }
-
 
   async searchWithHighlights(query: string): Promise<any[]> {
     // More advanced search with highlights and rank using raw SQL
@@ -92,5 +90,4 @@ export class ArticlesService {
 
     return results;
   }
-
 }

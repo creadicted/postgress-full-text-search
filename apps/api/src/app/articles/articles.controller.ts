@@ -1,12 +1,11 @@
-import {Controller, Get, Param, Query} from '@nestjs/common';
-import {ArticlesService} from './articles.service';
-import {ArticleEntity} from './article.entity';
-import {SearchArticleDto} from './dtos/search-article.dto';
+import { Controller, Get, Param, Query } from '@nestjs/common';
+import { ArticlesService } from './articles.service';
+import { ArticleEntity } from './article.entity';
+import { SearchArticleDto } from './dtos/search-article.dto';
 
 @Controller('articles')
 export class ArticlesController {
-  constructor(private readonly articlesService: ArticlesService) {
-  }
+  constructor(private readonly articlesService: ArticlesService) {}
 
   @Get()
   async findAll(): Promise<Partial<ArticleEntity>[]> {
@@ -15,7 +14,7 @@ export class ArticlesController {
 
   @Get('count')
   async countArticles() {
-    return this.articlesService.count()
+    return this.articlesService.count();
   }
 
   @Get(':id')
