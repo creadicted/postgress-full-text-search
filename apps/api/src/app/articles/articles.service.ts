@@ -67,8 +67,7 @@ export class ArticlesService {
    * Executes a dynamic search query on the articles database table based on a given input string.
    */
   async searchDynamic(query: string): Promise<any[]> {
-    const conn = this.em.getConnection();
-    const results = await conn.execute(
+    return await this.em.getConnection().execute(
       `
         SELECT id,
                title,
@@ -86,7 +85,5 @@ export class ArticlesService {
       `,
       [query, query]
     );
-
-    return results;
   }
 }
