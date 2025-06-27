@@ -9,6 +9,14 @@ This project showcases two primary approaches to PostgreSQL full-text search:
 - **ORM**: MikroORM 6.4.16 with PostgreSQL driver
 - **Build Tools**: Nx 21.2.1 (monorepo support)
 
+## Dataset
+This project uses the News Articles dataset downloaded from [Kaggle](https://www.kaggle.com/datasets/asad1m9a9h6mood/news-articles?resource=download).
+
+To set up the dataset:
+1. Download the dataset from the link above
+2. Place the `Articles.csv` file in the `.dataset` folder at the project root
+
+
 ## Getting Started
 ### Prerequisites
 - Node.js and npm
