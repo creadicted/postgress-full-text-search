@@ -25,8 +25,10 @@ export class ArticlesService {
     return this.articleRepository.findOne({ id });
   }
 
+  /**
+   * Searches for articles based on the provided query using full-text search.
+   **/
   async search(query: string): Promise<ArticleEntity[]> {
-    // Using the full-text search functionality with entity manager
     return this.articleRepository.find(
       {
         searchVector: { $fulltext: query },
@@ -38,14 +40,11 @@ export class ArticlesService {
     );
   }
 
+  /**
+   * Performs a search query on articles and returns results with highlighted matches and ranking.
+   */
   async searchWithHighlights(query: string): Promise<any[]> {
-    // More advanced search with highlights and rank using raw SQL
-    // This mimics your Clojure example with ts_headline
-    const conn = this.em.getConnection();
-
-    // Use question mark (?) for parameters instead of $1
-    // Also use the correct table name from the entity
-    const results = await conn.execute(
+    return await this.em.getConnection().execute(
       `
         SELECT id,
                ts_headline('english', title, plainto_tsquery('english', ?),
@@ -62,12 +61,12 @@ export class ArticlesService {
       `,
       [query, query, query, query]
     );
-
-    return results;
   }
 
+  /**
+   * Executes a dynamic search query on the articles database table based on a given input string.
+   */
   async searchDynamic(query: string): Promise<any[]> {
-    // This demonstrates dynamic vector calculation without using the stored column
     const conn = this.em.getConnection();
     const results = await conn.execute(
       `
