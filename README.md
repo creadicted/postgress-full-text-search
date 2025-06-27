@@ -1,81 +1,171 @@
-# PostgresFullTextSearch
+This project is a TypeScript/NestJS implementation of the [postgres-full-text-search-example](https://github.com/andfadeev/postgres-full-text-search-example) repository, demonstrating PostgreSQL's powerful full-text search capabilities in a modern Node.js environment.
+## Features
+This project showcases two primary approaches to PostgreSQL full-text search:
+- **Pre-calculated search vectors** stored in the database
+- **Dynamically built search vectors** created at query time
 
-<a alt="Nx logo" href="https://nx.dev" target="_blank" rel="noreferrer"><img src="https://raw.githubusercontent.com/nrwl/nx/master/images/nx-logo.png" width="45"></a>
+## Technology Stack
+- **Framework**: NestJS 11.0.0
+- **ORM**: MikroORM 6.4.16 with PostgreSQL driver
+- **Build Tools**: Nx 21.2.1 (monorepo support)
 
-✨ Your new, shiny [Nx workspace](https://nx.dev) is almost ready ✨.
+## Getting Started
+### Prerequisites
+- Node.js and npm
+- PostgreSQL database
 
-[Learn more about this workspace setup and its capabilities](https://nx.dev/nx-api/node?utm_source=nx_project&utm_medium=readme&utm_campaign=nx_projects) or run `npx nx graph` to visually explore what was created. Now, let's get you up to speed!
+### Installation
+1. Clone the repository:
+``` sh
+   git clone <repository-url>
+   cd postgres-full-text-search
+```
+1. Install dependencies:
+``` sh
+   npm install
+```
+1. Start the PostgreSQL database (using Docker Compose):
+``` sh
+   docker-compose up -d
+```
+1. Run the application:
+``` sh
+   npx nx serve api
+```
+## API Endpoints
+The application provides several endpoints to demonstrate full-text search capabilities:
+### Articles
+- `GET /articles` - List all articles (basic info)
+- `GET /articles/count` - Count all articles
+- `GET /articles/:id` - Get a specific article by ID
 
-## Finish your CI setup
+### Search
+- `GET /articles/search/basic` - Basic search using pre-calculated vectors
+``` 
+  /articles/search/basic?query=your search terms
+```
+- `GET /articles/search/highlights` - Search with highlighted matching text
+``` 
+  /articles/search/highlights?query=your search terms
+```
+- `GET /articles/search/dynamic` - Search using dynamically built vectors
+``` 
+  /articles/search/dynamic?query=your search terms
+```
+## Implementation Details
+### Article Entity
+The project uses MikroORM with a PostgreSQL-specific to manage the search vectors: `FullTextType`
+``` typescript
+@Entity({ tableName: 'articles' })
+export class ArticleEntity {
+  @PrimaryKey({ autoincrement: true })
+  id: number;
 
-[Click here to finish setting up your workspace!](https://cloud.nx.app/connect/z6JUEXU8cr)
+  @Property({ type: 'text' })
+  title!: string;
 
-## Run tasks
+  @Property({ type: 'text' })
+  content!: string;
 
-To run the dev server for your app, use:
+  // Pre-calculated search vector with different weights
+  @Index({ type: 'fulltext' })
+  @Property({
+    type: new FullTextType('english'),
+    onUpdate: (article: ArticleEntity) => ({
+      A: article.title || '',    // Weight A (highest)
+      B: article.content || '',  // Weight B (medium)
+    }),
+    name: 'search_vector',
+    hidden: true
+  })
+  searchVector!: WeightedFullTextValue;
+}
+```
+### Search Implementation
+#### Basic Search
+Uses MikroORM's built-in support for full-text search operators:
+``` typescript
+async search(query: string): Promise<ArticleEntity[]> {
+  return this.articleRepository.find(
+    {
+      searchVector: {$fulltext: query},
+    },
+    {
+      orderBy: {id: 'DESC'},
+      limit: 5
+    }
+  );
+}
+```
+#### Search with Highlights
+Uses raw SQL with PostgreSQL's function to highlight matching terms: `ts_headline`
+``` typescript
+async searchWithHighlights(query: string): Promise<any[]> {
+  const conn = this.em.getConnection();
+  const results = await conn.execute(
+    `
+      SELECT id,
+             ts_headline('english', title, plainto_tsquery('english', ?),
+                         'StartSel=<b>, StopSel=</b>') AS highlighted_title,
+             ts_headline('english', content, plainto_tsquery('english', ?),
+                         'StartSel=<b>, StopSel=</b>') AS highlighted_content,
+             title,
+             content,
+             ts_rank(search_vector, plainto_tsquery('english', ?)) AS rank
+      FROM articles
+      WHERE search_vector @@ plainto_tsquery('english', ?)
+      ORDER BY rank DESC
+      LIMIT 5
+    `,
+    [query, query, query, query]
+  );
 
-```sh
+  return results;
+}
+```
+#### Dynamic Search
+Builds the search vector on-the-fly instead of using the pre-calculated column:
+``` typescript
+async searchDynamic(query: string): Promise<any[]> {
+  const conn = this.em.getConnection();
+  const results = await conn.execute(
+    `
+      SELECT id,
+             title,
+             content,
+             ts_rank(
+               setweight(to_tsvector('english', coalesce(title, '')), 'A') ||
+               setweight(to_tsvector('english', coalesce(content, '')), 'B'),
+               plainto_tsquery('english', ?)
+             ) AS rank
+      FROM articles
+      WHERE setweight(to_tsvector('english', coalesce(title, '')), 'A') ||
+            setweight(to_tsvector('english', coalesce(content, '')), 'B') @@ plainto_tsquery('english', ?)
+      ORDER BY rank DESC
+      LIMIT 5
+    `,
+    [query, query]
+  );
+
+  return results;
+}
+```
+## When to Use Each Approach
+- **Pre-calculated vectors**: Ideal for better performance on large datasets with infrequent updates
+- **Dynamic vectors**: Useful when:
+  - You need to search across columns not included in the pre-calculated vector
+  - You want to use different weights for different search contexts
+  - The search vector definition needs to change frequently
+
+## Development
+This project is built on Nx, a smart and extensible build framework. For more information on using Nx, see the [Nx Documentation](https://nx.dev).
+``` sh
+# Serve the application
 npx nx serve api
-```
 
-To create a production bundle:
-
-```sh
+# Build the application
 npx nx build api
-```
 
-To see all available targets to run for a project, run:
-
-```sh
-npx nx show project api
-```
-
-These targets are either [inferred automatically](https://nx.dev/concepts/inferred-tasks?utm_source=nx_project&utm_medium=readme&utm_campaign=nx_projects) or defined in the `project.json` or `package.json` files.
-
-[More about running tasks in the docs &raquo;](https://nx.dev/features/run-tasks?utm_source=nx_project&utm_medium=readme&utm_campaign=nx_projects)
-
-## Add new projects
-
-While you could add new projects to your workspace manually, you might want to leverage [Nx plugins](https://nx.dev/concepts/nx-plugins?utm_source=nx_project&utm_medium=readme&utm_campaign=nx_projects) and their [code generation](https://nx.dev/features/generate-code?utm_source=nx_project&utm_medium=readme&utm_campaign=nx_projects) feature.
-
-Use the plugin's generator to create new projects.
-
-To generate a new application, use:
-
-```sh
-npx nx g @nx/node:app demo
-```
-
-To generate a new library, use:
-
-```sh
-npx nx g @nx/node:lib mylib
-```
-
-You can use `npx nx list` to get a list of installed plugins. Then, run `npx nx list <plugin-name>` to learn about more specific capabilities of a particular plugin. Alternatively, [install Nx Console](https://nx.dev/getting-started/editor-setup?utm_source=nx_project&utm_medium=readme&utm_campaign=nx_projects) to browse plugins and generators in your IDE.
-
-[Learn more about Nx plugins &raquo;](https://nx.dev/concepts/nx-plugins?utm_source=nx_project&utm_medium=readme&utm_campaign=nx_projects) | [Browse the plugin registry &raquo;](https://nx.dev/plugin-registry?utm_source=nx_project&utm_medium=readme&utm_campaign=nx_projects)
-
-[Learn more about Nx on CI](https://nx.dev/ci/intro/ci-with-nx#ready-get-started-with-your-provider?utm_source=nx_project&utm_medium=readme&utm_campaign=nx_projects)
-
-## Install Nx Console
-
-Nx Console is an editor extension that enriches your developer experience. It lets you run tasks, generate code, and improves code autocompletion in your IDE. It is available for VSCode and IntelliJ.
-
-[Install Nx Console &raquo;](https://nx.dev/getting-started/editor-setup?utm_source=nx_project&utm_medium=readme&utm_campaign=nx_projects)
-
-## Useful links
-
-Learn more:
-
-- [Learn more about this workspace setup](https://nx.dev/nx-api/node?utm_source=nx_project&utm_medium=readme&utm_campaign=nx_projects)
-- [Learn about Nx on CI](https://nx.dev/ci/intro/ci-with-nx?utm_source=nx_project&utm_medium=readme&utm_campaign=nx_projects)
-- [Releasing Packages with Nx release](https://nx.dev/features/manage-releases?utm_source=nx_project&utm_medium=readme&utm_campaign=nx_projects)
-- [What are Nx plugins?](https://nx.dev/concepts/nx-plugins?utm_source=nx_project&utm_medium=readme&utm_campaign=nx_projects)
-
-And join the Nx community:
-
-- [Discord](https://go.nx.dev/community)
-- [Follow us on X](https://twitter.com/nxdevtools) or [LinkedIn](https://www.linkedin.com/company/nrwl)
-- [Our Youtube channel](https://www.youtube.com/@nxdevtools)
-- [Our blog](https://nx.dev/blog?utm_source=nx_project&utm_medium=readme&utm_campaign=nx_projects)
+# Run tests
+npx nx test api
+``` 
