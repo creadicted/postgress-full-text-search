@@ -20,7 +20,7 @@ This project uses the News Articles dataset downloaded from [Kaggle](https://www
 To set up the dataset:
 
 1. Download the dataset from the link above
-2. Place the `Articles.csv` file in the `.dataset` folder at the project root
+2. Place the `Articles.csv` file in the `./dataset` folder at the project root
 
 ## Getting Started
 
