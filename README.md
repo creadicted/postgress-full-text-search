@@ -145,26 +145,23 @@ Uses raw SQL with PostgreSQL's function to highlight matching terms: `ts_headlin
 
 ```typescript
 async searchWithHighlights(query: string): Promise<any[]> {
-  const conn = this.em.getConnection();
-  const results = await conn.execute(
+  return await this.em.getConnection().execute(
     `
-      SELECT id,
-             ts_headline('english', title, plainto_tsquery('english', ?),
-                         'StartSel=<b>, StopSel=</b>') AS highlighted_title,
-             ts_headline('english', content, plainto_tsquery('english', ?),
-                         'StartSel=<b>, StopSel=</b>') AS highlighted_content,
-             title,
-             content,
-             ts_rank(search_vector, plainto_tsquery('english', ?)) AS rank
-      FROM articles
-      WHERE search_vector @@ plainto_tsquery('english', ?)
-      ORDER BY rank DESC
-      LIMIT 5
-    `,
+        SELECT id,
+               ts_headline('english', title, plainto_tsquery('english', ?),
+                           'StartSel=<b>, StopSel=</b>')             AS highlighted_title,
+               ts_headline('english', content, plainto_tsquery('english', ?),
+                           'StartSel=<b>, StopSel=</b>')             AS highlighted_content,
+               title,
+               content,
+               ts_rank(search_vector, plainto_tsquery('english', ?)) AS rank
+        FROM articles
+        WHERE search_vector @@ plainto_tsquery('english', ?)
+        ORDER BY rank DESC
+        LIMIT 5
+      `,
     [query, query, query, query]
   );
-
-  return results;
 }
 ```
 
@@ -174,27 +171,24 @@ Builds the search vector on-the-fly instead of using the pre-calculated column:
 
 ```typescript
 async searchDynamic(query: string): Promise<any[]> {
-  const conn = this.em.getConnection();
-  const results = await conn.execute(
+  return await this.em.getConnection().execute(
     `
-      SELECT id,
-             title,
-             content,
-             ts_rank(
-               setweight(to_tsvector('english', coalesce(title, '')), 'A') ||
-               setweight(to_tsvector('english', coalesce(content, '')), 'B'),
-               plainto_tsquery('english', ?)
-             ) AS rank
-      FROM articles
-      WHERE setweight(to_tsvector('english', coalesce(title, '')), 'A') ||
-            setweight(to_tsvector('english', coalesce(content, '')), 'B') @@ plainto_tsquery('english', ?)
-      ORDER BY rank DESC
-      LIMIT 5
-    `,
+        SELECT id,
+               title,
+               content,
+               ts_rank(
+                 setweight(to_tsvector('english', coalesce(title, '')), 'A') ||
+                 setweight(to_tsvector('english', coalesce(content, '')), 'B'),
+                 plainto_tsquery('english', ?)
+               ) AS rank
+        FROM articles
+        WHERE setweight(to_tsvector('english', coalesce(title, '')), 'A') ||
+              setweight(to_tsvector('english', coalesce(content, '')), 'B') @@ plainto_tsquery('english', ?)
+        ORDER BY rank DESC
+        LIMIT 5
+      `,
     [query, query]
   );
-
-  return results;
 }
 ```
 
