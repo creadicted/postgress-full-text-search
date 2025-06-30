@@ -1,4 +1,4 @@
-This project is a TypeScript/NestJS implementation of the [postgres-full-text-search-example](https://github.com/andfadeev/postgres-full-text-search-example) repository, demonstrating PostgreSQL's powerful full-text search capabilities in a Node.js environment.
+This project is a TypeScript/NestJS implementation of the [postgres-full-text-search-example](https://github.com/andfadeev/postgres-full-text-search-example) repository, demonstrating PostgreSQL's full-text search capabilities in a Node.js environment.
 
 ## Features
 
@@ -20,7 +20,7 @@ This project uses the News Articles dataset downloaded from [Kaggle](https://www
 To set up the dataset:
 
 1. Download the dataset from the link above
-2. Place the `Articles.csv` file in the `.dataset` folder at the project root
+2. Place the `Articles.csv` file in the `./dataset` folder at the project root
 
 ## Getting Started
 
